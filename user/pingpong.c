@@ -35,8 +35,8 @@ int main(int argc,char *argv[])
 	{//父进程 
 		close(p1[READ]);
 		close(p2[WRITE]);  //关闭未使用的管道
-		write(p1[WRITE],buf,1);  //父进程从p1管道写
-		read(p2[READ]," ",1);   //父进程从p2管道读
+		write(p1[WRITE]," ",1);  //父进程从p1管道写
+		read(p2[READ],buf,1);   //父进程从p2管道读
 		printf("%d:received pong\n",getpid()); 
 		close(p1[WRITE]);
 		close(p2[READ]);   //关闭所有管道 
