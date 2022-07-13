@@ -1,77 +1,66 @@
 #include "kernel/types.h"
-#include "kernel/stat.h"
 #include "user/user.h"
 #include "kernel/fs.h"
+#include "kernel/stat.h"
 #include "kernel/fcntl.h"
 
-char* fmtname(char *path)
-{//将路径名转换为文件名 
-	static char buf[DIRSIZ+1];
-	char *p;
-	for(p=path+strlen(path);p >= path && *p!='/';p--)
-		;
-	p++;
-	memmove(buf, p, strlen(p));
+void find(char *path, char *target_file);
 
-	return buf;
-}
-
-void find(char *path,char *filename)
-{//参考ls.c 
-	char buf[512], *p;
-	int fd;
-	struct dirent de;
-	struct stat st;
-	
-	if((fd = open(path, 0)) < 0)
-	{
-    	fprintf(2, "find: cannot open %s\n", path);
-    	return;
-    }
-    if(fstat(fd, &st) < 0)
-    {
-    	fprintf(2, "find: cannot stat %s\n", path);
-   		close(fd);
-    	return;
-    }
-    
-	switch(st.type)
-	{
-		case T_FILE:
-			if(strcmp(fmtname(path),filename)== 0)
-			{			  
-	    		printf("%s\n",path);    		
-			}
-			break;
-  		case T_DIR:
-		    if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf)
-			{
-		    	printf("find: path too long\n");
-		    	break;
-	    	}
-	    	strcpy(buf, path);
-		    p = buf+strlen(buf);
-		    *p++ = '/';
-		    while(read(fd, &de, sizeof(de)) == sizeof(de))
-			{//遍历文件 
-			    if(de.inum == 0 ||de.inum == 1 ||strcmp(de.name, ".")==0 ||strcmp(de.name, "..")==0)
-			    	continue;
-			    memmove(p, de.name,strlen(de.name));
-			    p[strlen(de.name)] = 0;
-			    find(buf,filename);
-		    }
-		    break;
-	}
-	close(fd);
-}
-
-int main(int argc,char *argv[])
-{
-	if(argc<2)
-	{
-		fprintf(2,"find:Please input 2 argurments.");
+int main(int argc, char *argv[]) {
+	if (argc != 3) {
+		fprintf(2, "ERROR: You need pass in only 2 arguments\n");
 		exit(1);
 	}
-	find(argv[1],argv[2]);   //<path>&<filename>
+	char *target_path = argv[1];
+	char *target_file = argv[2];
+	find(target_path, target_file);
 	exit(0);
-} 
+}
+
+void find(char *path, char *target_file) {
+	int fd;
+	struct stat st;
+	struct dirent de;
+	char buf[512], *p;
+
+	if ((fd = open(path, 0)) < 0) {
+		fprintf(2, "ERROR: cannot open %s\n", path);
+		return;
+	}
+	
+	if (fstat(fd, &st) < 0) {
+		fprintf(2, "ERROR: cannot stat %s\n", path);
+		close(fd);
+		return;
+	}
+
+
+	while (read(fd, &de, sizeof(de)) == sizeof(de)) {
+		strcpy(buf, path);
+		p = buf+strlen(buf);
+		*p++ = '/';
+		if (de.inum == 0)
+			continue;
+		memmove(p, de.name, DIRSIZ);
+		p[DIRSIZ] = 0;
+
+		if (stat(buf, &st) < 0) {
+			fprintf(2, "ERROR: cannot stat %s\n", buf);
+		}
+
+		switch (st.type) {
+		case T_FILE:
+			if (strcmp(target_file, de.name) == 0) {
+				printf("%s\n", buf);
+			}
+			break;
+		case T_DIR:
+			// get the full path name of the current directory selected
+			if ((strcmp(de.name, ".") != 0) && (strcmp(de.name, "..") != 0)) {
+				find(buf, target_file);
+}
+		}	
+	}
+	close(fd);
+	return;
+}
