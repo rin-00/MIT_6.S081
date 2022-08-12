@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -95,3 +96,31 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_trace(void)
+{
+	int n;
+	
+	if(argint(0,&n)<0)
+		return -1;
+	myproc()->syscallnum = n;
+	return 0;
+}
+
+uint64
+sys_sysinfo(void)
+{
+  uint64 p; // address of the sys info structure pointer
+  struct sysinfo si;
+   
+  if(argaddr(0, &p) < 0)
+    return -1;
+  si.freemem = freemem(); // collect the free memory size
+  si.nproc = getproc(); // collect the number of processes
+  if(copyout(myproc()->pagetable, p, (char *)&si, sizeof(si)) < 0) 
+  // copy out the sysinfo struct si from kernel space to user space
+    return -1;
+  return 0;
+  }
+
