@@ -70,13 +70,13 @@ usertrap(void)
   } else {
     if (r_scause() == 13 || r_scause() == 15) {
       // page fault
-      uint64 va = r_stval();
+      uint64 va = r_stval(); //get the virtual address that caused page fault
       if ((va < p->sz) && (va > PGROUNDDOWN(p->trapframe->sp))) {
         char *mem;
-        va = PGROUNDDOWN(va);
-        if ((mem = kalloc()) == 0) {
+        va = PGROUNDDOWN(va);  //round the faulting address down to a page boundry
+        if ((mem = kalloc()) == 0) {  //allocate the page
 	  p->killed = 1;
-        } else if (mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0) {
+        } else if (mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){//failed 
           kfree((void*)mem);
 	  p->killed = 1;
         }
