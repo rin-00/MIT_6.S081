@@ -72,7 +72,7 @@ usertrap(void)
       
       if (va >= MAXVA || (va <= PGROUNDDOWN(p->trapframe->sp) && va >= PGROUNDDOWN(p->trapframe->sp) - PGSIZE)) {
         p->killed = 1;
-      } else if (cow_alloc(p->pagetable, va) != 0) {
+      } else if (cow_alloc(p->pagetable, va) != 0) {//allocate memory
         p->killed = 1;
       }
   } else {
@@ -224,8 +224,7 @@ devintr()
   }
 }
 
-// allocate a physical address for virtual address va in pagetable
-// for copy on write lab
+// allocate a physical address for virtual address in pagetable
 int cow_alloc(pagetable_t pagetable, uint64 va) {
   uint64 pa;
   pte_t *pte;
@@ -240,13 +239,15 @@ int cow_alloc(pagetable_t pagetable, uint64 va) {
   if (pa == 0) return -1;
   flags = PTE_FLAGS(*pte);
 
+  //if the page is cow page,allocate a physical address
   if (flags & PTE_COW) {
     char *mem = kalloc();
     if (mem == 0) return -1;
     memmove(mem, (char*)pa, PGSIZE);
+    //delete PTE_COW,add PTE_W
     flags = (flags & ~PTE_COW) | PTE_W;
-    *pte = PA2PTE((uint64)mem) | flags;
-    kfree((void*)pa);
+    *pte = PA2PTE((uint64)mem) | flags;  //update pte
+    kfree((void*)pa);  //free the old page
     return 0;
   }
   return 0;

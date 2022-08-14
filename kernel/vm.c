@@ -319,12 +319,13 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
+    //clear PTE_W and add COW flags
     flags = PTE_FLAGS(*pte);
     if (flags & PTE_W) {
       flags = (flags | PTE_COW) & (~PTE_W);
-      *pte = PA2PTE(pa) | flags;
+      *pte = PA2PTE(pa) | flags;  //update pte
     }
-    refcinc((void*)pa);
+    refcinc((void*)pa);  //increase reference count
 //    if((mem = kalloc()) == 0)
 //      goto err;
 //    memmove(mem, (char*)pa, PGSIZE);
@@ -363,7 +364,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
-
+    //allocate the cow page
     if (cow_alloc(pagetable, va0) != 0) {
       return -1;
     }

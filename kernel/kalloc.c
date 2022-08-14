@@ -27,18 +27,20 @@ struct {
 // struct to maintain the ref counts
 struct {
   struct spinlock lock;
-  int count[PGROUNDUP(PHYSTOP) / PGSIZE];
+  int count[(PHYSTOP-KERNBASE)>>12];
 } refc;
 
+//init the ref struct
 void
 refcinit()
 {
   initlock(&refc.lock, "refc");
-  for (int i = 0; i < PGROUNDUP(PHYSTOP) / PGSIZE; i++) {
+  for (int i = 0; i < (PHYSTOP-KERNBASE)>>12; i++) {
     refc.count[i] = 0;
   }
 }
 
+//increase the ref
 void
 refcinc(void *pa)
 {
@@ -47,6 +49,7 @@ refcinc(void *pa)
   release(&refc.lock);
 }
 
+//decrease the ref
 void
 refcdec(void *pa)
 {
@@ -55,6 +58,7 @@ refcdec(void *pa)
   release(&refc.lock);
 }
 
+//get the number of ref
 int
 getrefc(void *pa)
 {
@@ -69,6 +73,7 @@ kinit()
   freerange(end, (void*)PHYSTOP);
   char *p;
   p = (char*)PGROUNDUP((uint64)end);
+  //all ref + 1
   for(; p + PGSIZE <= (char*)PHYSTOP; p += PGSIZE) {
     refcinc((void*)p);
   }
@@ -92,15 +97,14 @@ freerange(void *pa_start, void *pa_end)
 void
 kfree(void *pa)
 {
-  struct run *r;
-
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
-  refcdec(pa);
+  refcdec(pa); //ref-1
   if (getrefc(pa) > 0) return;
+  
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
-
+  struct run *r;
   r = (struct run*)pa;
 
   acquire(&kmem.lock);
@@ -125,7 +129,7 @@ kalloc(void)
 
   if(r) {
     memset((char*)r, 5, PGSIZE); // fill with junk
-    refcinc((void*)r);
+    refcinc((void*)r);//ref+1
   }
   return (void*)r;
 }
