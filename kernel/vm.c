@@ -104,8 +104,9 @@ walkaddr(pagetable_t pagetable, uint64 va)
     return 0;
 
   pte = walk(pagetable, va, 0);
-  if((pte == 0) || ((*pte & PTE_V) == 0)) {
+  if((pte == 0) || ((*pte & PTE_V) == 0)) {//allocate memory
     if (va > myproc()->sz || va < PGROUNDDOWN(myproc()->trapframe->sp)) {
+      //page invalid
       return 0;
     } 
     if ((mem = (uint64)kalloc()) == 0) return 0;
