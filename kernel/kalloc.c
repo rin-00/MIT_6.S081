@@ -21,11 +21,12 @@ struct run {
 struct {
   struct spinlock lock;
   struct run *freelist;
-} kmem[NCPU];
+} kmem[NCPU]; //a freelist and a lock per CPU
 
 void
 kinit()
 {
+  //init the kmem array
   for (int i = 0; i < NCPU; i++) {
     initlock(&kmem[i].lock, "kmem");
   }
@@ -57,10 +58,10 @@ kfree(void *pa)
   memset(pa, 1, PGSIZE);
 
   r = (struct run*)pa;
-
+  //get the current cpu core number
   push_off();
   int ncpu = cpuid();
-
+  //free the page to current cpu's freelist
   acquire(&kmem[ncpu].lock);
   r->next = kmem[ncpu].freelist;
   kmem[ncpu].freelist = r;
@@ -78,7 +79,7 @@ kalloc(void)
 
   push_off();
   int ncpu = cpuid();
-
+  //get the page from current cpu's freelist
   acquire(&kmem[ncpu].lock);
   r = kmem[ncpu].freelist;
   if(r) {

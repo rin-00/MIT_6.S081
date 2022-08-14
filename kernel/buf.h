@@ -5,8 +5,8 @@ struct buf {
   uint blockno;
   struct sleeplock lock;
   uint refcnt;
-  struct buf *next;
+  struct buf *next;  //hash list
   uchar data[BSIZE];
-  uint time;
+  uint time;    //the buf last using time
 };
 

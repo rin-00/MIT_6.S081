@@ -59,11 +59,11 @@ void
 binit(void)
 {
   struct buf *b;
-
+  //init all buckets lock
   for (int i = 0; i < NBUCKET; i++) {
     initlock(&bcache.lock[i], "bcache");
   }
-
+  
   bcache.head[0].next = &bcache.buf[0];
   // for initialization, append all bufs to bucket 0
   for (b = bcache.buf; b < bcache.buf+NBUF-1; b++) {
