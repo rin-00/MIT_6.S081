@@ -519,14 +519,15 @@ sys_symlink(void) {
   char target[MAXPATH];
   char path[MAXPATH];
   struct inode *ip;
-  // char test[MAXPATH];
 
   if (argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0) {
     return -1;
   }
   begin_op();
+
   if ((ip = namei(path)) == 0) {
-    // the path inode does not exist
+    // the path inode does not exist  
+    // create the symlink's inode
     ip = create(path, T_SYMLINK, 0, 0);
     iunlock(ip);
   } 

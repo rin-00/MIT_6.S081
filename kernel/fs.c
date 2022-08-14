@@ -400,15 +400,17 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     return addr;
   }
+  //doubly-indirect block
   bn -= NINDIRECT;
-
-  if (bn < NDBINDIRECT) {
+  if (bn < NDBINDIRECT) {   
     uint index_1 = bn/NINDIRECT;
     uint index_2 = bn%NINDIRECT;
+    //get the address of doubly-indirect block
     if ((addr = ip->addrs[NDIRECT+1]) == 0)
       ip->addrs[NDIRECT+1] = addr = balloc(ip->dev);
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
+    //get the address of singly-indirect block
     if ((addr = a[index_1]) == 0) {
       a[index_1] = addr = balloc(ip->dev);
       log_write(bp);
@@ -416,6 +418,7 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
+    //get the address of direct block
     if ((addr = a[index_2]) == 0) {
       a[index_2] = addr = balloc(ip->dev);
       log_write(bp);
@@ -454,7 +457,7 @@ itrunc(struct inode *ip)
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
   }
-
+  // free the doubly-indirect block
   if (ip->addrs[NDIRECT+1]) {
     bp = bread(ip->dev, ip->addrs[NDIRECT+1]);
     a = (uint*)bp->data;
