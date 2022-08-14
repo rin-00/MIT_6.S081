@@ -528,13 +528,13 @@ sys_sigreturn(void)
 uint64
 sys_sigalarm(void)
 {
-  int ticks;
-  uint64 funaddr; // pointer to function
-  if ((argint(0, &ticks) < 0) || (argaddr(1, &funaddr) < 0)) {
+  int interval;
+  uint64 handler; // pointer to function
+  if ((argint(0, &interval) < 0) || (argaddr(1, &handler) < 0)) {
     return -1;
   }
   struct proc *p = myproc();
-  p->interval = ticks;
-  p->handler = (void(*)())funaddr;
+  p->interval = interval;
+  p->handler = (void(*)())handler;
   return 0;
 }

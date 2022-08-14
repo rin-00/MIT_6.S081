@@ -105,7 +105,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   int interval;                // interval of alarm
   void (*handler)();           // pointer to the handler function
-  int ticks;                   // how many ticks have passed since last call
+  int ticks;                   // record ticks have passed since last call
   int in_handler;              // to prevent from reentering into handler when in handler
   uint64 saved_epc;
   uint64 saved_ra;

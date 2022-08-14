@@ -353,6 +353,7 @@ sfence_vma()
 typedef uint64 pte_t;
 typedef uint64 *pagetable_t; // 512 PTEs
 
+//read the current frame point from s0 register
 static inline uint64
 r_fp()
 {

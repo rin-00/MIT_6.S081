@@ -134,18 +134,24 @@ printfinit(void)
   pr.locking = 1;
 }
 
+//print the return address
 void
 backtrace(void)
 {
   uint64 fp, ra, top, bottom;
   printf("backtrace:\n");
-  fp = r_fp();
-  top = PGROUNDUP(fp);
+  //the frame pointer of the currently executing function
+  fp = r_fp();  
+  //stack page top
+  top = PGROUNDUP(fp);  
+  //stack page bottom
   bottom = PGROUNDDOWN(fp);
   while (fp < top && fp > bottom)
   {
+    //get the return address
     ra = *(uint64 *)(fp-8);
     printf("%p\n", ra);
+    //get the saved frame pointer
     fp = *(uint64 *)(fp-16);
   }
 }

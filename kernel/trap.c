@@ -67,10 +67,10 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     if (which_dev == 2 && p->in_handler == 0) {
-      p->ticks += 1;
+      p->ticks += 1;  //time interrupt
       if ((p->ticks == p->interval) && (p->interval != 0)) {
 	p->in_handler = 1;
-	p->ticks = 0;
+	p->ticks = 0;  //reset
         p->saved_epc = p->trapframe->epc;
 	p->saved_ra = p->trapframe->ra;
 	p->saved_sp = p->trapframe->sp;
@@ -103,7 +103,7 @@ usertrap(void)
 	p->saved_a5 = p->trapframe->a5;
 	p->saved_a6 = p->trapframe->a6;
 	p->saved_a7 = p->trapframe->a7;
-        p->trapframe->epc = (uint64)p->handler;
+        p->trapframe->epc = (uint64)p->handler;  // execute handler() when return to user space
       }
     }
   } else {
