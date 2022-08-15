@@ -541,10 +541,12 @@ sys_mmap(void)
   if (argint(1, &length)<0 || argint(2, &prot)<0 || argint(3, &flags)<0 || argfd(4, &fd, &f)<0) {
     return -1;
   }
+  // the file must be written when flag is MAP_SHARED
   if (!f->writable && (prot & PROT_WRITE) && (flags & MAP_SHARED)) return -1;
   struct proc *p = myproc();
   struct vma *pvma = p->procvma;
   for (int i = 0; i < MAXVMA; i++) {
+    // allocate a VMA for the mapped memory
     if(pvma[i].valid == 0) {
       pvma[i].addr = p->sz;
       pvma[i].f = filedup(f);  // increment the refcount for f
