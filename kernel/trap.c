@@ -65,17 +65,16 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } else if((which_dev = devintr()) != 0){
-    // ok
-  } else if (r_scause() == 13 || r_scause() == 15) {
-      uint64 va = r_stval();
-      
-      if (va >= MAXVA || (va <= PGROUNDDOWN(p->trapframe->sp) && va >= PGROUNDDOWN(p->trapframe->sp) - PGSIZE)) {
+  }else if (r_scause() == 15) {
+      uint64 va = r_stval();    
+      if (va >= MAXVA) {
         p->killed = 1;
       } else if (cow_alloc(p->pagetable, va) != 0) {//allocate memory
         p->killed = 1;
       }
-  } else {
+  } else if((which_dev = devintr())){
+    // ok
+  }else {
       p->killed = 1;
   }
 
@@ -246,8 +245,14 @@ int cow_alloc(pagetable_t pagetable, uint64 va) {
     memmove(mem, (char*)pa, PGSIZE);
     //delete PTE_COW,add PTE_W
     flags = (flags & ~PTE_COW) | PTE_W;
-    *pte = PA2PTE((uint64)mem) | flags;  //update pte
-    kfree((void*)pa);  //free the old page
+        uvmunmap(pagetable, PGROUNDDOWN(va), 1, 1);
+    // 更新新映射
+    if (mappages(pagetable, PGROUNDDOWN(va), PGSIZE, (uint64)mem, flags) != 0) {
+      kfree(mem);
+      return -1;
+    }
+    //*pte = PA2PTE((uint64)mem) | flags;  //update pte
+    //kfree((void*)pa);
     return 0;
   }
   return 0;

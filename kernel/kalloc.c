@@ -27,7 +27,7 @@ struct {
 // struct to maintain the ref counts
 struct {
   struct spinlock lock;
-  int count[(PHYSTOP-KERNBASE)>>12];
+  int count[PHYSTOP >> 12];
 } refc;
 
 //init the ref struct
@@ -35,7 +35,7 @@ void
 refcinit()
 {
   initlock(&refc.lock, "refc");
-  for (int i = 0; i < (PHYSTOP-KERNBASE)>>12; i++) {
+  for (int i = 0; i < PHYSTOP >> 12; i++) {
     refc.count[i] = 0;
   }
 }
@@ -71,12 +71,6 @@ kinit()
   refcinit();
   initlock(&kmem.lock, "kmem");
   freerange(end, (void*)PHYSTOP);
-  char *p;
-  p = (char*)PGROUNDUP((uint64)end);
-  //all ref + 1
-  for(; p + PGSIZE <= (char*)PHYSTOP; p += PGSIZE) {
-    refcinc((void*)p);
-  }
 }
 
 void
@@ -85,9 +79,9 @@ freerange(void *pa_start, void *pa_end)
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE) {
+    refcinc((void*)p);
     kfree(p);
-}
-    
+  }   
 }
 
 // Free the page of physical memory pointed at by v,
@@ -125,11 +119,10 @@ kalloc(void)
   r = kmem.freelist;
   if(r)
     kmem.freelist = r->next;
-  release(&kmem.lock);
-
-  if(r) {
-    memset((char*)r, 5, PGSIZE); // fill with junk
-    refcinc((void*)r);//ref+1
+  release(&kmem.lock); 
+  refcinc((void*)r);//ref+1 
+  if(r) {   
+    memset((char*)r, 5, PGSIZE); // fill with junk     
   }
   return (void*)r;
 }
