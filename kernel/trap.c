@@ -65,9 +65,9 @@ usertrap(void)
     intr_on();
 
     syscall();
-  }else if (r_scause() == 15) {
+  }else if (r_scause() == 13 || r_scause() == 15) {
       uint64 va = r_stval();    
-      if (va >= MAXVA) {
+      if (va >= MAXVA || (va <= PGROUNDDOWN(p->trapframe->sp) && va >= PGROUNDDOWN(p->trapframe->sp) - PGSIZE)) {
         p->killed = 1;
       } else if (cow_alloc(p->pagetable, va) != 0) {//allocate memory
         p->killed = 1;
